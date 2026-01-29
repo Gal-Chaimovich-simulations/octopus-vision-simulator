@@ -153,6 +153,51 @@ def create_grating_aperture(grid_size=512, period_px=20, orientation='vertical')
     
     return aperture
 
+
+
+def create_w_aperture(grid_size=512, width_px=400, height_px=200, thickness_px=20):
+    """Create W-shaped aperture (like octopus pupil)"""
+    aperture = np.zeros((grid_size, grid_size))
+    center = grid_size // 2
+    
+    half_w = width_px // 2
+    half_h = height_px // 2
+    half_t = thickness_px // 2
+    
+    # Left diagonal: from top-left to bottom-center
+    for i in range(height_px):
+        y = center - half_h + i
+        x = center - half_w + (i * half_w) // height_px
+        if 0 <= y < grid_size and 0 <= x < grid_size:
+            y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
+            x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
+            aperture[y_s:y_e, x_s:x_e] = 1.0
+    
+    # Right diagonal: from top-right to bottom-center
+    for i in range(height_px):
+        y = center - half_h + i
+        x = center + half_w - (i * half_w) // height_px
+        if 0 <= y < grid_size and 0 <= x < grid_size:
+            y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
+            x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
+            aperture[y_s:y_e, x_s:x_e] = 1.0
+    
+    # Middle V (going up from center)
+    for i in range(height_px // 2):
+        y = center + half_h - i
+        x_left = center - (i * half_w) // height_px
+        x_right = center + (i * half_w) // height_px
+        if 0 <= y < grid_size:
+            y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
+            if 0 <= x_left < grid_size:
+                x_s, x_e = max(0, x_left-half_t), min(grid_size, x_left+half_t)
+                aperture[y_s:y_e, x_s:x_e] = 1.0
+            if 0 <= x_right < grid_size:
+                x_s, x_e = max(0, x_right-half_t), min(grid_size, x_right+half_t)
+                aperture[y_s:y_e, x_s:x_e] = 1.0
+    
+    return aperture
+
 # ============================================================
 # SIMULATION FUNCTIONS
 # ============================================================
@@ -223,7 +268,7 @@ def main():
     st.sidebar.header("🔘 Aperture Shape")
     aperture_type = st.sidebar.selectbox(
         "Type",
-        ["Circle", "Rectangle", "Grating", "Upload Custom"]
+        ["Circle", "Rectangle", "W-Shape (Octopus)", "Grating", "Upload Custom"]
     )
     
     # Create aperture based on type
@@ -235,6 +280,12 @@ def main():
         width_px = st.sidebar.slider("Width (pixels)", 10, 500, 400)
         height_px = st.sidebar.slider("Height (pixels)", 10, 500, 20)
         aperture_mask = create_rectangular_aperture(GRID_SIZE, width_px, height_px)
+    
+    elif aperture_type == "W-Shape (Octopus)":
+        w_width = st.sidebar.slider("W Width (pixels)", 100, 500, 300)
+        w_height = st.sidebar.slider("W Height (pixels)", 50, 400, 200)
+        w_thickness = st.sidebar.slider("Line Thickness (pixels)", 5, 50, 15)
+        aperture_mask = create_w_aperture(GRID_SIZE, w_width, w_height, w_thickness)
         
     elif aperture_type == "Grating":
         period_px = st.sidebar.slider("Period (pixels)", 5, 100, 20)
