@@ -163,38 +163,53 @@ def create_w_aperture(grid_size=512, width_px=400, height_px=200, thickness_px=2
     half_w = width_px // 2
     half_h = height_px // 2
     half_t = thickness_px // 2
+    quarter_w = width_px // 4
     
-    # Left diagonal: from top-left to bottom-center
+    # W has 4 diagonal segments:
+    # 1. Top-left down to bottom quarter-left
+    # 2. Bottom quarter-left up to middle-top
+    # 3. Middle-top down to bottom quarter-right
+    # 4. Bottom quarter-right up to top-right
+    
+    # Segment 1: top-left to bottom-left-quarter
     for i in range(height_px):
+        t = i / height_px
         y = center - half_h + i
-        x = center - half_w + (i * half_w) // height_px
+        x = center - half_w + int(t * quarter_w)
         if 0 <= y < grid_size and 0 <= x < grid_size:
             y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
             x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
             aperture[y_s:y_e, x_s:x_e] = 1.0
     
-    # Right diagonal: from top-right to bottom-center
+    # Segment 2: bottom-left-quarter up to middle-top
     for i in range(height_px):
-        y = center - half_h + i
-        x = center + half_w - (i * half_w) // height_px
-        if 0 <= y < grid_size and 0 <= x < grid_size:
-            y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
-            x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
-            aperture[y_s:y_e, x_s:x_e] = 1.0
-    
-    # Middle V (going up from center)
-    for i in range(height_px // 2):
+        t = i / height_px
         y = center + half_h - i
-        x_left = center - (i * half_w) // height_px
-        x_right = center + (i * half_w) // height_px
-        if 0 <= y < grid_size:
+        x = center - quarter_w + int(t * quarter_w)
+        if 0 <= y < grid_size and 0 <= x < grid_size:
             y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
-            if 0 <= x_left < grid_size:
-                x_s, x_e = max(0, x_left-half_t), min(grid_size, x_left+half_t)
-                aperture[y_s:y_e, x_s:x_e] = 1.0
-            if 0 <= x_right < grid_size:
-                x_s, x_e = max(0, x_right-half_t), min(grid_size, x_right+half_t)
-                aperture[y_s:y_e, x_s:x_e] = 1.0
+            x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
+            aperture[y_s:y_e, x_s:x_e] = 1.0
+    
+    # Segment 3: middle-top down to bottom-right-quarter
+    for i in range(height_px):
+        t = i / height_px
+        y = center - half_h + i
+        x = center + int(t * quarter_w)
+        if 0 <= y < grid_size and 0 <= x < grid_size:
+            y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
+            x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
+            aperture[y_s:y_e, x_s:x_e] = 1.0
+    
+    # Segment 4: bottom-right-quarter up to top-right
+    for i in range(height_px):
+        t = i / height_px
+        y = center + half_h - i
+        x = center + quarter_w + int(t * quarter_w)
+        if 0 <= y < grid_size and 0 <= x < grid_size:
+            y_s, y_e = max(0, y-half_t), min(grid_size, y+half_t)
+            x_s, x_e = max(0, x-half_t), min(grid_size, x+half_t)
+            aperture[y_s:y_e, x_s:x_e] = 1.0
     
     return aperture
 
